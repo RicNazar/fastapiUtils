@@ -23,10 +23,9 @@ EstruturaTabela = Dict[str, Dict[str, ColunaDict]]
 
 # Tipos de relações SQL comuns
 tiposJoins = Literal[
-    "Left",
-    "Right",
-    "Inner",
-    "Full"
+    "left",
+    "right",
+    "inner",
 ]
 
 class RelacoesDict(TypedDict):
@@ -35,8 +34,6 @@ class RelacoesDict(TypedDict):
     coluna_a: str
     coluna_b: str
     tipo: tiposJoins
-    alias_tabela_a: Optional[str]
-    alias_tabela_b: Optional[str]
 
 '''
 estrutura = {
@@ -262,8 +259,6 @@ class Db(metaclass=Singleton):
                     symbols.append("🔑")  # Chave primária
                 if details['unica']:
                     symbols.append("⭐")  # Único
-                if details['chaveEstrangeira']:
-                    symbols.append("🔗")  # Chave estrangeira
                 if not details['anulavel']:
                     symbols.append("❗")  # Não nulo
                 
@@ -271,13 +266,9 @@ class Db(metaclass=Singleton):
                 
                 print(f"  • {column_name:<15} | {details['tipo']:<15} {symbol_str}")
                 
-                # Mostrar referências se existirem
-                if details['referencias']:
-                    for ref in details['referencias']:
-                        print(f"    └── Referencia: {ref['tabela']}.{ref['coluna']}")
         
         print("\n" + "="*60)
-        print("Legenda: 🔑 Chave Primária | ⭐ Único | 🔗 Chave Estrangeira | ❗ Não Nulo")
+        print("Legenda: 🔑 Chave Primária | ⭐ Único | ❗ Não Nulo")
         print("="*60 + "\n")
     
     def listar_dados_tabela(self, nome_tabela: str):
@@ -352,7 +343,7 @@ class Db(metaclass=Singleton):
 
         #adiciona as relacoes
         if relacoes:
-            for relacao in relacoes:
+            for relacao in reversed(relacoes):
                 tabela_a = relacao['tabela_a']
                 tabela_b = relacao['tabela_b']
                 coluna_a = relacao['coluna_a']
@@ -365,12 +356,11 @@ class Db(metaclass=Singleton):
                 
                 if tipo == "inner":
                     stmt = stmt.join(modelo_a, modelo_a.__table__.c[coluna_a] == modelo_b.__table__.c[coluna_b])
-                elif tipo == "left":
-                    stmt = stmt.join(modelo_a, modelo_a.__table__.c[coluna_a] == modelo_b.__table__.c[coluna_b],isouter=True)
                 elif tipo == "right":
                     stmt = stmt.join(modelo_b, modelo_a.__table__.c[coluna_a] == modelo_b.__table__.c[coluna_b],isouter=True)
-                elif tipo == "full":
-                    stmt = stmt.join(modelo_a, modelo_a.__table__.c[coluna_a] == modelo_b.__table__.c[coluna_b], full=True)
+                else:
+                    #tipo == "left"
+                    stmt = stmt.join(modelo_a, modelo_a.__table__.c[coluna_a] == modelo_b.__table__.c[coluna_b],isouter=True)
 
         #Adiciona as condições
         if criterios:
@@ -676,28 +666,53 @@ if __name__ == "__main__":
         print(linha)
     
     # Remove dados
-    db.remover("users", [1, 3, 20])
+    db.remover("users", [1, 2, 20])
     print("\nApós remoção:")
     db.listar_dados_tabela("users")
 
     #Adiciona orders
     ids_atualizar = db.atualizar("orders", [
-        ["id","user_id", "product","amount","price"],
-        [0,2, "Produto A", 2, 19.99],
-        [0,2, "Produto B", 1, 9.99],
-        [0,4, "Produto C", 5, 4.99]
+        ["id", "user_id", "product", "quantity", "price", "order_date", "status"],
+        [0, 2, "Notebook Dell", 1, 3500.00, "2024-06-01", "completed"],
+        [0, 3, "Mouse Logitech", 2, 120.50, "2024-06-02", "pending"],
+        [0, 2, "Teclado Mecânico", 1, 450.00, "2024-06-03", "shipped"],
+        [0, 20, "Monitor LG", 1, 1200.00, "2024-06-04", "completed"],
+        [0, 3, "Cadeira Gamer", 1, 950.00, "2024-06-05", "cancelled"],
+        [0, 2, "Headset HyperX", 1, 350.00, "2024-06-06", "pending"],
     ])
     print("IDs atualizados:", ids_atualizar)
     db.listar_dados_tabela("orders")
+    db.listar_dados_tabela("users")
+
+    # Adiciona uma relação entre as tabelas users e orders
+    relacao_users_orders: RelacoesDict = {
+            "tabela_a": "users",
+            "tabela_b": "orders",
+            "coluna_a": "id",
+            "coluna_b": "user_id",
+            "tipo": "left"  # Tipo de relação: "left", "right", "inner"
+        }
 
     #Pesquisa as orders do cliente "Ricardo"
     resultados = db.consultar_base(
         colunas=["id", "name", "email","product","amount","price"],
         tabelas=["users","users","users","orders","orders","orders"],
-        criterios=[["name","id"], ["Ricardo;Jane Smith","2"]],
-        tabelas_criterios=["users","users","users","orders","orders","orders"],
+        criterios=[["uf"], ["MG"]],
+        tabelas_criterios=["users"],
         relacoes=[
-            ["users.id", "orders.user_id"]
+            relacao_users_orders
+        ]
+        )
+    print("\nResultados da consulta com relação:")
+    for linha in resultados:
+        print(linha)
+    
+    #Pesquisa as orders do cliente "Ricardo"
+    resultados = db.consultar_base(
+        colunas=["id", "name", "email","product","amount","price"],
+        tabelas=["users","users","users","orders","orders","orders"],
+        relacoes=[
+            relacao_users_orders
         ]
         )
     print("\nResultados da consulta com relação:")

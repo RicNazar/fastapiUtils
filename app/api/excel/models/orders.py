@@ -7,7 +7,7 @@ class Orders(Base):
     __tablename__ = 'orders'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(nullable=False,foreign_key='users.id')
+    user_id: Mapped[int] = mapped_column(nullable=False)
     product: Mapped[str] = mapped_column(types.String(100), nullable=False)
     quantity: Mapped[int] = mapped_column(nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
