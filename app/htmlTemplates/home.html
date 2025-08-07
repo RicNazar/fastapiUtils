@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
     <h1>{{ title }}</h1>
     <p>{{ content }}</p>
-</body>
+    <div>
+      {% for route in routes %}
+      <button onclick="location.href='{{ route.path }}'">
+        {{ route.name }}
+      </button>
+      {% endfor %}
+    </div>
+  </body>
 </html>

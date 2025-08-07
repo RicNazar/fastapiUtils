@@ -5,7 +5,7 @@ from app.api.excel import dependencies as dp
 router = APIRouter()
 
 @router.post("/")
-async def obter_estrutura(tabelas: Annotated[str,"Tabelas separadas por ;"], excel: dp.Excel = Depends(dp.get_excel)):
+async def obter_estrutura(tabelas: Annotated[str,"Tabelas separadas por ;"]="", excel: dp.Excel = Depends(dp.get_excel)):
     tabelas_ok = [tabela.strip() for tabela in tabelas.split(";") if tabela.strip()]
     if len(tabelas_ok) == 0:
         return excel.db.estrutura

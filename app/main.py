@@ -15,12 +15,18 @@ templates = Jinja2Templates(directory="app/htmlTemplates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 #páginas estáticas
-context = {"title": "FastApi Utils","content": "Utilitários para o FastApi"}
+routes = [
+    {"name": "Home", "path": "/"},
+    {"name": "API Docs", "path": "/docs"},
+    {"name": "ReDoc", "path": "/redoc"},
+]
+context = {"title": "FastApi Utils","content": "Utilitários para o FastApi","routes": routes}
 paginaInicial = templates.get_template("home.html").render(context)
 
 #adição do roteador de API
-app.include_router(api_router, prefix="/api", tags=["api"])
+app.include_router(api_router, prefix="/api")
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse,include_in_schema=False)
 async def home():
     return paginaInicial
+

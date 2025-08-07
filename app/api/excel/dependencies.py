@@ -1,6 +1,6 @@
 #from fastapi import Depends
-from api.excel.classes.db import Db
-from api.excel.classes.excel import Excel
+from app.api.excel.classes.db import Db
+from app.api.excel.classes.excel import Excel
 
 #(db: Db = Depends(get_db)):
 def get_db():

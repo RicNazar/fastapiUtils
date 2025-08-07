@@ -10,6 +10,6 @@ router.include_router(obter_estrutura.router, prefix="/obter_estrutura")
 #Rotas post
 router.include_router(pesquisar.router, prefix="/pesquisar")
 
-@router.get("/")
-async def excel_root():
+@router.get("/",include_in_schema=False)
+async def check():
     return {"status": "Ok"}
