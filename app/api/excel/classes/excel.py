@@ -127,7 +127,6 @@ class Excel(metaclass=Singleton):
                 matriz_excluir.append(linha[0])
             ids.append(tipo)
 
-
         #Exclui os dados se necessário
         if matriz_excluir:
             self.db.remover(tabela, matriz_excluir)
