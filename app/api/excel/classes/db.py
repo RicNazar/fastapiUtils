@@ -5,7 +5,7 @@ import os
 import importlib
 import pkgutil
 import json
-from typing import List,Dict,TypedDict,Literal,Any,Type
+from typing import List,Dict,TypedDict,Literal,Any,Type,Optional
 
 #Imports internos
 from app.api.excel.classes.dbBases import Base
@@ -15,7 +15,7 @@ class ColunaDict(TypedDict):
     tipo: str
     unica: bool
     primaria: bool
-    autoincremento: bool
+    autoincremento: Optional[bool]
     anulavel: bool
 
 EstruturaTabela = Dict[str, Dict[str, ColunaDict]]
@@ -83,13 +83,13 @@ class Db(metaclass=_Singleton):
         estrutura = {}
         for table_name, table in base.metadata.tables.items():
             estrutura[table_name] = {}
-            for column in table.columns:
+            for column_name, column in table.columns.items():
                 estrutura[table_name][column.name] = {
                     "tipo": str(column.type),
                     "unica": column.unique or False,
-                    "primaria": column.primary_key or False,
-                    "anulavel": column.nullable or True,
-                    "autoincremento": column.autoincrement or (True if column.primary_key or False else False),
+                    "primaria": column.primary_key,
+                    "anulavel": column.nullable,
+                    "autoincremento": column.primary_key and column.autoincrement == "auto",
                 }
         return estrutura
 
@@ -385,6 +385,7 @@ class Db(metaclass=_Singleton):
                         #Coleta o sinal (início da string = >= < <= <>) e o valor
                         sinal = ""
                         if isinstance(coluna, str):
+                            #Trata casos numéricos
                             if coluna.startswith(">"):
                                 sinal = ">"
                             elif coluna.startswith("<"):
@@ -398,6 +399,17 @@ class Db(metaclass=_Singleton):
                             elif coluna.startswith("!=") or coluna.startswith("<>"):
                                 sinal = "!="
                             coluna = coluna[len(sinal):].strip()
+                            #Trata casos de texto
+                            if coluna.startswith("*") and coluna.endswith("*"):
+                                sinal = "**"
+                                coluna = coluna[1:-1]
+                            elif coluna.startswith("*"):
+                                sinal = "*-"
+                                coluna = coluna[1:]
+                            elif coluna.endswith("*"):
+                                sinal = "-*"
+                                coluna = coluna[:-1]
+
                         #Trata o caso de or no critério caso tenha mais de uma coluna ;
                         if isinstance(coluna, str):
                             colunas_or = coluna.split(";")
@@ -419,6 +431,12 @@ class Db(metaclass=_Singleton):
                                     crit_and_or.append(modelo.__table__.c[col] >= valor_efetivo)
                                 elif sinal == "<=":
                                     crit_and_or.append(modelo.__table__.c[col] <= valor_efetivo)
+                                elif sinal == "**":
+                                    crit_and_or.append(modelo.__table__.c[col].ilike(f"%{valor_efetivo}%"))
+                                elif sinal == "*-":
+                                    crit_and_or.append(modelo.__table__.c[col].ilike(f"%{valor_efetivo}"))
+                                elif sinal == "-*":
+                                    crit_and_or.append(modelo.__table__.c[col].ilike(f"{valor_efetivo}%"))
                                 elif sinal == "!=":
                                     crit_and_or.append(modelo.__table__.c[col] != valor_efetivo)
                                     if valor_efetivo == "":

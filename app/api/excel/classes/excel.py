@@ -1,6 +1,6 @@
 from typing import List,Any
 
-from app.api.excel.classes.db import Db,RelacoesDict
+from app.api.excel.classes.db import Db,RelacoesDict,EstruturaTabela
 from app.api.excel.classes.singleton import Singleton
 
 class Excel(metaclass=Singleton):
@@ -50,7 +50,7 @@ class Excel(metaclass=Singleton):
             raise ValueError("A lista de tabelas de critérios deve conter apenas uma linha com os nomes das tabelas.")
         
         #Coleta os critérios em uma lista
-        criterios_tabelas_ok = criterios_tabelas[0]
+        criterios_tabelas_ok = criterios_tabelas[0] if criterios_tabelas is not None else None
 
         #Gea as relações
         relacoes_ok = None
@@ -142,7 +142,7 @@ class Excel(metaclass=Singleton):
         #Retorna
         return ids
     
-    def coletar_estrutura(self, tabelas: List[str]):
+    def coletar_estrutura(self, tabelas: List[str])-> EstruturaTabela:
         estrutura = self.db.estrutura
         return {tabela: estrutura[tabela] for tabela in tabelas if tabela in estrutura}
 
