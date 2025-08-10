@@ -5,10 +5,9 @@ import os
 import importlib
 import pkgutil
 import json
-from typing import List,Dict,TypedDict,Optional,Union,Literal,Any
+from typing import List,Dict,TypedDict,Literal,Any,Type
 
 #Imports internos
-from app.api.excel.classes.singleton import Singleton
 from app.api.excel.classes.dbBases import Base
 
 #Tipagem
@@ -52,9 +51,16 @@ estrutura = {
     }
 }
 '''
-
+#Classe de Apoio
+class _Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+    
 #Classe principal
-class Db(metaclass=Singleton):
+class Db(metaclass=_Singleton):
     @property
     def estrutura(self) -> EstruturaTabela:
         return self._estrutura
