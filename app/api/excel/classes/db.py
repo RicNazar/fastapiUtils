@@ -17,6 +17,7 @@ class ColunaDict(TypedDict):
     primaria: bool
     autoincremento: Optional[bool]
     anulavel: bool
+    enum: Optional[List[Any]]
 
 EstruturaTabela = Dict[str, Dict[str, ColunaDict]]
 
@@ -90,6 +91,7 @@ class Db(metaclass=_Singleton):
                     "primaria": column.primary_key,
                     "anulavel": column.nullable,
                     "autoincremento": column.primary_key and column.autoincrement == "auto",
+                    "enum": column.type.enums if hasattr(column.type, "enums") else None
                 }
         return estrutura
 

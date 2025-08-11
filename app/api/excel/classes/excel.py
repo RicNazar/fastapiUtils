@@ -112,6 +112,29 @@ class Excel(metaclass=Singleton):
         if matriz[0][-1] != "MD":
             raise ValueError("A última coluna da matriz deve ser chamada 'MD' para indicar a ação de atualização A (Atualizar ou Incluir) ou D (Excluir).")
 
+        #Coleta a estrutura da tabela
+        estrutura_tabela = self.coletar_estrutura([tabela])
+        if not estrutura_tabela:
+            raise ValueError(f"A estrutura da tabela '{tabela}' não foi encontrada.")
+        
+        #Coleta as colunas com Enums
+        colunas_com_enum = {col: info["enum"] for col, info in estrutura_tabela[tabela].items() if info.get("enum")}
+
+        #Valida nas colunas dos dados passados
+        if colunas_com_enum:
+            erros_enum = []
+            for col, col_valor in enumerate(matriz[0][:-1]):  # Ignora a última coluna "MD"
+                if col_valor in colunas_com_enum:
+                    for lin in enumerate(matriz[1:]):
+                        lin_valor = lin[1][col]
+                        if lin_valor not in colunas_com_enum[col_valor]:
+                            erros_enum.append(f"Linha {lin[0]+1:03}: O valor '{lin_valor}' da coluna '{col_valor}' não é válido.")
+
+                if erros_enum:
+                    erros_enum.append("Os valores devem ser um dos seguintes: " + ", ".join(colunas_com_enum[col_valor]))
+                    raise ValueError("Erros de validação encontrados:\n" + "\n".join(erros_enum))
+
+
         #Separa as linhas da matriz em dois grupos: atualizar_incluir e excluir
         ids = [''] #inicializa ids com uma string vazia (cabeçalho)
         matriz_atualizar_incluir = [matriz[0][:-1]]  # Mantém a primeira linha (cabeçalho) sem a última coluna

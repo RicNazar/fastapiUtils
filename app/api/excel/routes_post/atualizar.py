@@ -18,4 +18,4 @@ async def atualizar(body: AtualizarRequest, excel: dp.Excel = Depends(dp.get_exc
             matriz=body.matriz
         )
     except Exception as e:
-        return {"error": str(e)}
+       return {"error": str(e)}
